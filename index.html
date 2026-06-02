@@ -130,6 +130,64 @@
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 99px; }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .app { flex-direction: column; }
+    .main { padding-bottom: 72px; }
+    .page { padding: 20px 16px; }
+
+    /* Bottom nav */
+    .bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 1px solid var(--border); z-index: 100; padding: 8px 0 env(safe-area-inset-bottom, 8px); }
+    .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: none; background: none; cursor: pointer; color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+    .bottom-nav-item .nav-icon { font-size: 20px; width: auto; }
+    .bottom-nav-item.active { color: var(--brown); }
+    .bottom-nav-item.active .nav-icon { transform: translateY(-2px); }
+
+    /* Cards 2x2 grid */
+    .cards-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .card { padding: 14px; }
+    .card-value { font-size: 20px; }
+    .card-label { font-size: 11px; }
+
+    /* Charts stack */
+    .charts-row { grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+    .chart-wrap { height: 180px; }
+
+    /* Forms */
+    .form-card { padding: 16px; margin-bottom: 14px; }
+    .form-row { grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; }
+    input, select { padding: 12px 14px; font-size: 16px; } /* 16px prevents iOS zoom */
+    .btn { padding: 12px 20px; font-size: 15px; }
+    .btn-primary { width: 100%; justify-content: center; }
+
+    /* Type toggle bigger */
+    .type-toggle { margin-bottom: 16px; }
+    .type-btn { padding: 12px; font-size: 15px; }
+
+    /* Transactions */
+    .tx-item { padding: 12px 14px; }
+    .list-header { padding: 14px 16px; }
+
+    /* Metas */
+    .meta-grid { grid-template-columns: 1fr; }
+
+    /* Categorias */
+    .cat-grid { grid-template-columns: 1fr; }
+
+    h2 { font-size: 18px; margin-bottom: 14px; }
+    h3 { font-size: 14px; }
+
+    /* Report filter scroll */
+    .report-filter { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .report-filter::-webkit-scrollbar { display: none; }
+    .filter-btn { white-space: nowrap; flex-shrink: 0; }
+  }
+
+  @media (min-width: 769px) {
+    .bottom-nav { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -147,6 +205,14 @@
   </nav>
 
   <div class="main">
+    <!-- Bottom nav (mobile only) -->
+    <nav class="bottom-nav">
+      <button class="bottom-nav-item active" onclick="showPage('dashboard', this)"><span class="nav-icon">📊</span>Início</button>
+      <button class="bottom-nav-item" onclick="showPage('lancamentos', this)"><span class="nav-icon">📝</span>Lançar</button>
+      <button class="bottom-nav-item" onclick="showPage('metas', this)"><span class="nav-icon">🎯</span>Metas</button>
+      <button class="bottom-nav-item" onclick="showPage('relatorios', this)"><span class="nav-icon">📈</span>Relatórios</button>
+      <button class="bottom-nav-item" onclick="showPage('categorias', this)"><span class="nav-icon">🏷️</span>Categorias</button>
+    </nav>
 
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
@@ -333,14 +399,19 @@ async function loadAll() {
 // ── Navegação ─────────────────────────────────────────────────────────────
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(btn) btn.classList.add('active');
+  // sync the other nav (sidebar vs bottom)
+  document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(n=>{
+    if(n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'") && n!==btn) n.classList.add('active');
+  });
   if(id==='dashboard') renderDashboard();
   if(id==='lancamentos') renderLancamentos();
   if(id==='metas') renderMetas();
   if(id==='relatorios') renderRelatorios();
   if(id==='categorias') renderCategorias();
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 // ── Lançamentos ───────────────────────────────────────────────────────────
