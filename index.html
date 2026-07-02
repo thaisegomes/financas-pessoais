@@ -209,6 +209,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
         <h2 style="margin:0">Visão geral</h2>
         <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="toggleValores()" id="btn-eye" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:var(--text2)" title="Ocultar/mostrar valores">👁️</button>
           <button onclick="changeYear(-1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:var(--text2)">‹</button>
           <span id="dash-year" style="font-size:16px;font-weight:600;min-width:48px;text-align:center"></span>
           <button onclick="changeYear(1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:var(--text2)">›</button>
@@ -283,6 +284,14 @@
           <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%" onclick="addConta()">Adicionar</button></div>
         </div>
       </div>
+      <!-- Filtros -->
+      <div class="form-card" style="padding:16px;margin-bottom:12px">
+        <div class="form-row" style="margin-bottom:0">
+          <div><label>🔍 Buscar por nome</label><input id="cp-search" type="text" placeholder="Digite para buscar..." oninput="renderContas()"></div>
+          <div><label>📅 Mês</label><select id="cp-mes" onchange="renderContas()"><option value="">Todos os meses</option></select></div>
+          <div><label>🏷️ Categoria</label><select id="cp-filter-cat" onchange="renderContas()"><option value="">Todas as categorias</option></select></div>
+        </div>
+      </div>
       <div class="tabs">
         <button class="tab active" onclick="filterContas('pendente',this)">⏳ Pendentes</button>
         <button class="tab" onclick="filterContas('pago',this)">✅ Pagas</button>
@@ -314,6 +323,14 @@
             </select>
           </div>
           <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%" onclick="addRecebimento()">Adicionar</button></div>
+        </div>
+      </div>
+      <!-- Filtros -->
+      <div class="form-card" style="padding:16px;margin-bottom:12px">
+        <div class="form-row" style="margin-bottom:0">
+          <div><label>🔍 Buscar por nome</label><input id="rp-search" type="text" placeholder="Digite para buscar..." oninput="renderRecebimentos()"></div>
+          <div><label>📅 Mês</label><select id="rp-mes" onchange="renderRecebimentos()"><option value="">Todos os meses</option></select></div>
+          <div><label>🏷️ Categoria</label><select id="rp-filter-cat" onchange="renderRecebimentos()"><option value="">Todas as categorias</option></select></div>
         </div>
       </div>
       <div class="tabs">
@@ -401,6 +418,14 @@ let transactions=[],metas=[],customCats=[],contas=[],recebimentos=[];
 let currentType='receita',selectedReportMonth=null,charts={},selectedColor=PALETTE[0],editingCatId=null;
 let contaFilter='pendente',recebFilter='pendente';
 let dashYear=new Date().getFullYear(),dashMonthIdx=new Date().getMonth();
+
+let valoresVisiveis=true;
+function toggleValores(){
+  valoresVisiveis=!valoresVisiveis;
+  document.getElementById('btn-eye').textContent=valoresVisiveis?'👁️':'🙈';
+  renderDashboard();
+}
+function fmtV(n){return valoresVisiveis?fmt(n):'R$ ••••••';}
 
 function toast(msg,isError=false){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show'+(isError?' error':'');setTimeout(()=>el.className='toast',2500);}
 function loading(on){const bar=document.getElementById('loading-bar');if(on){bar.className='loading-bar active';}else{bar.className='loading-bar done';setTimeout(()=>bar.className='loading-bar',600);}}
@@ -498,12 +523,12 @@ function renderLancamentos(){
   const m=sel.value||currentMonth();const txs=txByMonth(m);
   document.getElementById('all-list').innerHTML=txs.length?txs.map(t=>txRow(t,true)).join(''):'<div class="empty"><div class="empty-icon">📭</div>Nenhuma transação neste mês</div>';
 }
-function txRow(t,showDel=false){
+function txRow(t,showDel=false,hideVal=false){
   const c=getCat(t.cat);
   return`<div class="tx-item">
     <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
     <div class="tx-info"><div class="tx-desc">${t.descricao}</div><div class="tx-meta">${c.label} · ${new Date(t.data_tx+'T12:00:00').toLocaleDateString('pt-BR')}</div></div>
-    <div class="tx-amount ${t.type==='receita'?'pos':'neg'}">${t.type==='receita'?'+':'-'} ${fmt(t.valor)}</div>
+    <div class="tx-amount ${t.type==='receita'?'pos':'neg'}">${t.type==='receita'?'+':'-'} ${hideVal?fmtV(t.valor):fmt(t.valor)}</div>
     ${showDel?`<button class="tx-del" onclick="delTransaction(${t.id})">✕</button>`:''}
   </div>`;
 }
@@ -549,11 +574,29 @@ function filterContas(f,btn){contaFilter=f;document.querySelectorAll('#page-cont
 function renderContas(){
   populateContaCats();
   if(!document.getElementById('cp-venc').value)document.getElementById('cp-venc').value=new Date().toISOString().split('T')[0];
+
+  // Popula filtro de meses
+  const mesesContas=[...new Set(contas.map(c=>c.vencimento.substring(0,7)))].sort();
+  const selMes=document.getElementById('cp-mes');
+  const mesSel=selMes.value;
+  selMes.innerHTML='<option value="">Todos os meses</option>'+mesesContas.map(m=>`<option value="${m}" ${m===mesSel?'selected':''}>${monthLabel(m)}</option>`).join('');
+
+  // Popula filtro de categorias
+  const catsContas=[...new Set(contas.map(c=>c.categoria))];
+  const selCat=document.getElementById('cp-filter-cat');
+  const catSel=selCat.value;
+  selCat.innerHTML='<option value="">Todas as categorias</option>'+catsContas.map(id=>{const c=getCat(id);return`<option value="${id}" ${id===catSel?'selected':''}>${c.icon} ${c.label}</option>`;}).join('');
+
+  const busca=document.getElementById('cp-search').value.toLowerCase();
   let lista=contas;
-  if(contaFilter==='pendente')lista=contas.filter(c=>c.status==='pendente');
-  if(contaFilter==='pago')lista=contas.filter(c=>c.status==='pago');
+  if(contaFilter==='pendente')lista=lista.filter(c=>c.status==='pendente');
+  if(contaFilter==='pago')lista=lista.filter(c=>c.status==='pago');
+  if(selMes.value)lista=lista.filter(c=>c.vencimento.startsWith(selMes.value));
+  if(selCat.value)lista=lista.filter(c=>c.categoria===selCat.value);
+  if(busca)lista=lista.filter(c=>c.nome.toLowerCase().includes(busca));
+
   const el=document.getElementById('contas-list');
-  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div>Nenhuma conta aqui</div>';return;}
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div>Nenhuma conta encontrada</div>';return;}
   el.innerHTML=lista.map(c=>{
     const cat=getCat(c.categoria);const dias=diasAteVencer(c.vencimento);
     let diasLabel='';
@@ -618,11 +661,29 @@ function filterReceb(f,btn){recebFilter=f;document.querySelectorAll('#page-receb
 function renderRecebimentos(){
   populateRecebCats();
   if(!document.getElementById('rp-data').value)document.getElementById('rp-data').value=new Date().toISOString().split('T')[0];
+
+  // Popula filtro de meses
+  const mesesReceb=[...new Set(recebimentos.map(r=>r.data_prevista.substring(0,7)))].sort();
+  const selMes=document.getElementById('rp-mes');
+  const mesSel=selMes.value;
+  selMes.innerHTML='<option value="">Todos os meses</option>'+mesesReceb.map(m=>`<option value="${m}" ${m===mesSel?'selected':''}>${monthLabel(m)}</option>`).join('');
+
+  // Popula filtro de categorias
+  const catsReceb=[...new Set(recebimentos.map(r=>r.categoria))];
+  const selCat=document.getElementById('rp-filter-cat');
+  const catSel=selCat.value;
+  selCat.innerHTML='<option value="">Todas as categorias</option>'+catsReceb.map(id=>{const c=getCat(id);return`<option value="${id}" ${id===catSel?'selected':''}>${c.icon} ${c.label}</option>`;}).join('');
+
+  const busca=document.getElementById('rp-search').value.toLowerCase();
   let lista=recebimentos;
-  if(recebFilter==='pendente')lista=recebimentos.filter(r=>r.status==='pendente');
-  if(recebFilter==='recebido')lista=recebimentos.filter(r=>r.status==='recebido');
+  if(recebFilter==='pendente')lista=lista.filter(r=>r.status==='pendente');
+  if(recebFilter==='recebido')lista=lista.filter(r=>r.status==='recebido');
+  if(selMes.value)lista=lista.filter(r=>r.data_prevista.startsWith(selMes.value));
+  if(selCat.value)lista=lista.filter(r=>r.categoria===selCat.value);
+  if(busca)lista=lista.filter(r=>r.nome.toLowerCase().includes(busca));
+
   const el=document.getElementById('recebimentos-list');
-  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">💵</div>Nenhum recebimento aqui</div>';return;}
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">💵</div>Nenhum recebimento encontrado</div>';return;}
   el.innerHTML=lista.map(r=>{
     const cat=getCat(r.categoria);const dias=diasAteVencer(r.data_prevista);
     let diasLabel='';
@@ -682,23 +743,23 @@ function renderDashboard(){
   const totalReceber=recebPendentes.reduce((s,r)=>s+r.valor,0);
 
   document.getElementById('summary-cards').innerHTML=`
-    <div class="card"><div class="card-label">Saldo do mês</div><div class="card-value ${saldo>=0?'green':'red'}">${fmt(saldo)}</div><div class="card-sub">${saldo>=0?'✓ No positivo':'⚠ No negativo'}</div></div>
-    <div class="card"><div class="card-label">Receitas</div><div class="card-value green">${fmt(rec)}</div><div class="card-sub">${txs.filter(t=>t.type==='receita').length} lançamentos</div></div>
-    <div class="card"><div class="card-label">Despesas</div><div class="card-value red">${fmt(desp)}</div><div class="card-sub">${txs.filter(t=>t.type==='despesa').length} lançamentos</div></div>
-    <div class="card"><div class="card-label">A pagar</div><div class="card-value yellow">${fmt(totalPagar)}</div><div class="card-sub">${contasPendentes.length} pendente(s)</div></div>
-    <div class="card"><div class="card-label">A receber</div><div class="card-value purple">${fmt(totalReceber)}</div><div class="card-sub">${recebPendentes.length} pendente(s)</div></div>
+    <div class="card"><div class="card-label">Saldo do mês</div><div class="card-value ${saldo>=0?'green':'red'}">${fmtV(saldo)}</div><div class="card-sub">${saldo>=0?'✓ No positivo':'⚠ No negativo'}</div></div>
+    <div class="card"><div class="card-label">Receitas</div><div class="card-value green">${fmtV(rec)}</div><div class="card-sub">${txs.filter(t=>t.type==='receita').length} lançamentos</div></div>
+    <div class="card"><div class="card-label">Despesas</div><div class="card-value red">${fmtV(desp)}</div><div class="card-sub">${txs.filter(t=>t.type==='despesa').length} lançamentos</div></div>
+    <div class="card"><div class="card-label">A pagar</div><div class="card-value yellow">${fmtV(totalPagar)}</div><div class="card-sub">${contasPendentes.length} pendente(s)</div></div>
+    <div class="card"><div class="card-label">A receber</div><div class="card-value purple">${fmtV(totalReceber)}</div><div class="card-sub">${recebPendentes.length} pendente(s)</div></div>
   `;
 
   const urgentes=contas.filter(c=>c.status==='pendente'&&diasAteVencer(c.vencimento)<=7);
   const alertEl=document.getElementById('alert-contas');
   if(urgentes.length){
     alertEl.innerHTML=`<div class="alert-box"><div class="alert-title">⚠️ Contas vencendo em breve</div>
-      ${urgentes.map(c=>{const dias=diasAteVencer(c.vencimento);return`<div class="alert-item"><span>${getCat(c.categoria).icon} ${c.nome}</span><span style="display:flex;gap:8px;align-items:center"><span class="badge ${dias<=0?'badge-red':'badge-yellow'}">${dias<0?'Vencida':dias===0?'Hoje':dias+' dias'}</span><strong>${fmt(c.valor)}</strong></span></div>`;}).join('')}
+      ${urgentes.map(c=>{const dias=diasAteVencer(c.vencimento);return`<div class="alert-item"><span>${getCat(c.categoria).icon} ${c.nome}</span><span style="display:flex;gap:8px;align-items:center"><span class="badge ${dias<=0?'badge-red':'badge-yellow'}">${dias<0?'Vencida':dias===0?'Hoje':dias+' dias'}</span><strong>${fmtV(c.valor)}</strong></span></div>`;}).join('')}
     </div>`;
   }else{alertEl.innerHTML='';}
 
   const el=document.getElementById('recent-list');
-  el.innerHTML=txs.length?txs.slice(0,8).map(t=>txRow(t)).join(''):'<div class="empty"><div class="empty-icon">📭</div>Nenhuma transação neste mês</div>';
+  el.innerHTML=txs.length?txs.slice(0,8).map(t=>txRow(t,false,true)).join(''):'<div class="empty"><div class="empty-icon">📭</div>Nenhuma transação neste mês</div>';
   renderEvolucao();renderCatChart();
 }
 
