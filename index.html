@@ -676,9 +676,9 @@ function renderDashboard(){
   const rec=txs.filter(t=>t.type==='receita').reduce((s,t)=>s+t.valor,0);
   const desp=txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+t.valor,0);
   const saldo=rec-desp;
-  const contasPendentes=contas.filter(c=>c.status==='pendente');
+  const contasPendentes=contas.filter(c=>c.status==='pendente'&&c.vencimento.startsWith(m));
   const totalPagar=contasPendentes.reduce((s,c)=>s+c.valor,0);
-  const recebPendentes=recebimentos.filter(r=>r.status==='pendente');
+  const recebPendentes=recebimentos.filter(r=>r.status==='pendente'&&r.data_prevista.startsWith(m));
   const totalReceber=recebPendentes.reduce((s,r)=>s+r.valor,0);
 
   document.getElementById('summary-cards').innerHTML=`
@@ -689,7 +689,7 @@ function renderDashboard(){
     <div class="card"><div class="card-label">A receber</div><div class="card-value purple">${fmt(totalReceber)}</div><div class="card-sub">${recebPendentes.length} pendente(s)</div></div>
   `;
 
-  const urgentes=contasPendentes.filter(c=>diasAteVencer(c.vencimento)<=7);
+  const urgentes=contas.filter(c=>c.status==='pendente'&&diasAteVencer(c.vencimento)<=7);
   const alertEl=document.getElementById('alert-contas');
   if(urgentes.length){
     alertEl.innerHTML=`<div class="alert-box"><div class="alert-title">⚠️ Contas vencendo em breve</div>
