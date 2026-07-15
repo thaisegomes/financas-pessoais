@@ -995,13 +995,12 @@ function renderDashboard(){
   const txs=txByMonth(m);
   const rec=txs.filter(t=>t.type==='receita').reduce((s,t)=>s+t.valor,0);
   const desp=txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+t.valor,0);
-  const saldo=rec-desp;
+  const invest=txs.filter(t=>t.type==='investimento').reduce((s,t)=>s+t.valor,0);
+  const saldo=rec-desp; // investimento não entra no saldo
   const contasPendentes=contas.filter(c=>c.status==='pendente'&&c.vencimento.startsWith(m));
   const totalPagar=contasPendentes.reduce((s,c)=>s+c.valor,0);
   const recebPendentes=recebimentos.filter(r=>r.status==='pendente'&&r.data_prevista.startsWith(m));
   const totalReceber=recebPendentes.reduce((s,r)=>s+r.valor,0);
-
-  const invest=txs.filter(t=>t.type==='investimento').reduce((s,t)=>s+t.valor,0);
   const totalCaixinhas=caixinhas.reduce((s,c)=>s+c.saldo,0);
 
   document.getElementById('summary-cards').innerHTML=`
