@@ -149,8 +149,36 @@
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px;}
 
+  /* Investimento type */
+  .type-btn.active-investimento{background:rgba(74,111,165,0.1);color:var(--blue);}
+
+  /* Caixinhas */
+  .caixinha-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px;}
+  .caixinha-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all 0.2s;}
+  .caixinha-card:hover{box-shadow:0 4px 20px rgba(101,72,47,0.1);transform:translateY(-2px);}
+  .caixinha-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .caixinha-emoji{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+  .caixinha-nome{font-size:16px;font-weight:600;margin-bottom:2px;}
+  .caixinha-saldo{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;margin-bottom:4px;}
+  .caixinha-meta-label{font-size:12px;color:var(--text3);}
+  .caixinha-actions{display:flex;gap:6px;margin-top:14px;}
+
+  /* Caixinha detalhe */
+  .caixinha-detalhe{display:none;}
+  .caixinha-detalhe.active{display:block;}
+  .back-btn{display:inline-flex;align-items:center;gap:8px;color:var(--text2);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:0;margin-bottom:20px;}
+  .back-btn:hover{color:var(--text);}
+  .mov-item{display:flex;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);gap:12px;}
+  .mov-item:last-child{border-bottom:none;}
+  .mov-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .mov-info{flex:1;}
+  .mov-desc{font-size:14px;font-weight:500;}
+  .mov-data{font-size:12px;color:var(--text3);margin-top:2px;}
+  .mov-valor{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;}
+
   @media(max-width:768px){
-    .sidebar{display:none;}
+    .caixinha-grid{grid-template-columns:1fr;}
+  }
     .app{flex-direction:column;}
     .main{padding-bottom:72px;}
     .page{padding:20px 16px;}
@@ -192,6 +220,7 @@
     <button class="nav-item" onclick="showPage('contas',this)"><span class="nav-icon">📅</span><span>Contas a Pagar</span></button>
     <button class="nav-item" onclick="showPage('recebimentos',this)"><span class="nav-icon">💵</span><span>Recebimentos</span></button>
     <button class="nav-item" onclick="showPage('metas',this)"><span class="nav-icon">🎯</span><span>Metas</span></button>
+    <button class="nav-item" onclick="showPage('caixinhas',this)"><span class="nav-icon">🏦</span><span>Caixinhas</span></button>
     <button class="nav-item" onclick="showPage('relatorios',this)"><span class="nav-icon">📈</span><span>Relatórios</span></button>
     <button class="nav-item" onclick="showPage('categorias',this)"><span class="nav-icon">🏷️</span><span>Categorias</span></button>
   </nav>
@@ -200,7 +229,7 @@
       <button class="bottom-nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Início</button>
       <button class="bottom-nav-item" onclick="showPage('lancamentos',this)"><span class="nav-icon">📝</span>Lançar</button>
       <button class="bottom-nav-item" onclick="showPage('contas',this)"><span class="nav-icon">📅</span>Contas</button>
-      <button class="bottom-nav-item" onclick="showPage('recebimentos',this)"><span class="nav-icon">💵</span>Receber</button>
+      <button class="bottom-nav-item" onclick="showPage('caixinhas',this)"><span class="nav-icon">🏦</span>Caixinhas</button>
       <button class="bottom-nav-item" onclick="showPage('metas',this)"><span class="nav-icon">🎯</span>Metas</button>
     </nav>
 
@@ -239,6 +268,7 @@
         <div class="type-toggle">
           <button class="type-btn active-receita" id="btn-receita" onclick="setType('receita')">+ Receita</button>
           <button class="type-btn" id="btn-despesa" onclick="setType('despesa')">− Despesa</button>
+          <button class="type-btn" id="btn-investimento" onclick="setType('investimento')">📈 Investimento</button>
         </div>
         <div class="form-row">
           <div><label>Descrição</label><input id="f-desc" type="text" placeholder="Ex: Salário, Mercado..."></div>
@@ -339,6 +369,68 @@
         <button class="tab" onclick="filterReceb('todas',this)">📋 Todos</button>
       </div>
       <div class="list-card"><div id="recebimentos-list"></div></div>
+    </div>
+
+    <!-- CAIXINHAS -->
+    <div id="page-caixinhas" class="page">
+      <h2>Caixinhas</h2>
+
+      <!-- Lista de caixinhas -->
+      <div id="caixinhas-lista">
+        <div class="form-card">
+          <div class="form-row">
+            <div><label>Nome da caixinha</label><input id="cx-nome" type="text" placeholder="Ex: Reserva, Viagem..."></div>
+            <div><label>Emoji</label><input id="cx-emoji" type="text" placeholder="🏦" maxlength="2" style="font-size:20px"></div>
+            <div><label>Meta (R$) — opcional</label><input id="cx-meta" type="number" placeholder="0,00" min="0" step="0.01"></div>
+            <div><label>Cor</label><select id="cx-cor">
+              <option value="#4a7c59">🟢 Verde</option>
+              <option value="#4a6fa5">🔵 Azul</option>
+              <option value="#7c5c3e">🟤 Marrom</option>
+              <option value="#b85450">🔴 Vermelho</option>
+              <option value="#c49a3c">🟡 Dourado</option>
+              <option value="#7a5fa5">🟣 Roxo</option>
+            </select></div>
+          </div>
+          <button class="btn btn-primary" onclick="addCaixinha()">Criar caixinha</button>
+        </div>
+        <div class="caixinha-grid" id="caixinhas-grid"></div>
+      </div>
+
+      <!-- Detalhe de uma caixinha -->
+      <div id="caixinha-detalhe" class="caixinha-detalhe">
+        <button class="back-btn" onclick="voltarCaixinhas()">← Voltar às caixinhas</button>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+          <div style="display:flex;gap:14px;align-items:center">
+            <div id="cx-det-emoji" style="width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px"></div>
+            <div>
+              <div id="cx-det-nome" style="font-size:20px;font-weight:600"></div>
+              <div id="cx-det-saldo" style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;margin-top:2px"></div>
+              <div id="cx-det-meta" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deletarCaixinha()">🗑️ Excluir caixinha</button>
+        </div>
+        <div id="cx-det-progress" style="margin-bottom:20px"></div>
+
+        <!-- Adicionar movimento -->
+        <div class="form-card">
+          <div class="tabs" style="margin-bottom:16px">
+            <button class="tab active" id="cx-tab-deposito" onclick="setCxTipo('deposito',this)">+ Depósito</button>
+            <button class="tab" id="cx-tab-retirada" onclick="setCxTipo('retirada',this)">− Retirada</button>
+          </div>
+          <div class="form-row">
+            <div><label>Descrição</label><input id="cx-mov-desc" type="text" placeholder="Ex: Guardei do salário..."></div>
+            <div><label>Valor (R$)</label><input id="cx-mov-valor" type="number" placeholder="0,00" min="0" step="0.01"></div>
+            <div><label>Data</label><input id="cx-mov-data" type="date"></div>
+            <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%" onclick="addMovimento()">Adicionar</button></div>
+          </div>
+        </div>
+
+        <div class="list-card">
+          <div class="list-header"><h3 style="margin:0">Movimentações</h3></div>
+          <div id="cx-movimentos-list"></div>
+        </div>
+      </div>
     </div>
 
     <!-- METAS -->
@@ -442,15 +534,16 @@ function parcelasLabel(total_parcelas,parcela_atual){if(total_parcelas===0)retur
 async function loadAll(){
   loading(true);
   try{
-    const[txRes,metaRes,catRes,contaRes,recebRes]=await Promise.all([
+    const[txRes,metaRes,catRes,contaRes,recebRes,cxRes]=await Promise.all([
       sb.from('transactions').select('*').order('data_tx',{ascending:false}),
       sb.from('metas').select('*').order('created_at'),
       sb.from('custom_cats').select('*').order('created_at'),
       sb.from('contas').select('*').order('vencimento',{ascending:true}),
       sb.from('recebimentos').select('*').order('data_prevista',{ascending:true}),
+      sb.from('caixinhas').select('*').order('created_at'),
     ]);
     transactions=txRes.data||[];metas=metaRes.data||[];customCats=catRes.data||[];
-    contas=contaRes.data||[];recebimentos=recebRes.data||[];
+    contas=contaRes.data||[];recebimentos=recebRes.data||[];caixinhas=cxRes.data||[];
   }catch(e){toast('Erro ao carregar dados',true);}
   loading(false);
 }
@@ -468,6 +561,7 @@ function showPage(id,btn){
   if(id==='contas')renderContas();
   if(id==='recebimentos')renderRecebimentos();
   if(id==='metas')renderMetas();
+  if(id==='caixinhas'){renderCaixinhas();voltarCaixinhas();}
   if(id==='relatorios')renderRelatorios();
   if(id==='categorias')renderCategorias();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -478,11 +572,13 @@ function setType(t){
   currentType=t;
   document.getElementById('btn-receita').className='type-btn'+(t==='receita'?' active-receita':'');
   document.getElementById('btn-despesa').className='type-btn'+(t==='despesa'?' active-despesa':'');
+  document.getElementById('btn-investimento').className='type-btn'+(t==='investimento'?' active-investimento':'');
   populateCats();
 }
 function populateCats(){
   const cats=getAllCats();
-  document.getElementById('f-cat').innerHTML=cats[currentType].map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+  const tipo=currentType==='investimento'?'despesa':currentType;
+  document.getElementById('f-cat').innerHTML=cats[tipo].map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
 }
 function populateContaCats(){
   const cats=getAllCats();
@@ -525,12 +621,130 @@ function renderLancamentos(){
 }
 function txRow(t,showDel=false,hideVal=false){
   const c=getCat(t.cat);
+  const colorClass=t.type==='receita'?'pos':t.type==='investimento'?'blue':'neg';
+  const sign=t.type==='receita'?'+':t.type==='investimento'?'📈':'−';
   return`<div class="tx-item">
     <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
-    <div class="tx-info"><div class="tx-desc">${t.descricao}</div><div class="tx-meta">${c.label} · ${new Date(t.data_tx+'T12:00:00').toLocaleDateString('pt-BR')}</div></div>
-    <div class="tx-amount ${t.type==='receita'?'pos':'neg'}">${t.type==='receita'?'+':'-'} ${hideVal?fmtV(t.valor):fmt(t.valor)}</div>
+    <div class="tx-info"><div class="tx-desc">${t.descricao}</div><div class="tx-meta">${c.label} · ${new Date(t.data_tx+'T12:00:00').toLocaleDateString('pt-BR')} ${t.type==='investimento'?'· <span style="color:var(--blue);font-weight:500">Investimento</span>':''}</div></div>
+    <div class="tx-amount ${colorClass}">${sign} ${hideVal?fmtV(t.valor):fmt(t.valor)}</div>
     ${showDel?`<button class="tx-del" onclick="delTransaction(${t.id})">✕</button>`:''}
   </div>`;
+}
+
+// ── Caixinhas ─────────────────────────────────────────────────────────────
+let caixinhas=[];let movimentos=[];let caixinhaAtual=null;let cxTipo='deposito';
+
+function setCxTipo(t,btn){
+  cxTipo=t;
+  document.querySelectorAll('#page-caixinhas .tab').forEach(tb=>tb.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+
+async function addCaixinha(){
+  const nome=document.getElementById('cx-nome').value.trim();
+  const emoji=document.getElementById('cx-emoji').value.trim()||'🏦';
+  const meta=parseFloat(document.getElementById('cx-meta').value)||0;
+  const cor=document.getElementById('cx-cor').value;
+  if(!nome){toast('Dê um nome para a caixinha!',true);return;}
+  loading(true);
+  const nova={id:Date.now(),nome,emoji,cor,meta,saldo:0};
+  const{error}=await sb.from('caixinhas').insert(nova);
+  if(error){toast('Erro ao criar caixinha',true);loading(false);return;}
+  caixinhas.push(nova);
+  document.getElementById('cx-nome').value='';document.getElementById('cx-emoji').value='';document.getElementById('cx-meta').value='';
+  loading(false);toast('Caixinha criada!');renderCaixinhas();
+}
+
+async function addMovimento(){
+  if(!caixinhaAtual){return;}
+  const descricao=document.getElementById('cx-mov-desc').value.trim();
+  const valor=parseFloat(document.getElementById('cx-mov-valor').value);
+  const data=document.getElementById('cx-mov-data').value;
+  if(!descricao||isNaN(valor)||valor<=0||!data){toast('Preencha todos os campos!',true);return;}
+  if(cxTipo==='retirada'&&valor>caixinhaAtual.saldo){toast('Saldo insuficiente na caixinha!',true);return;}
+  loading(true);
+  const mov={id:Date.now(),caixinha_id:caixinhaAtual.id,descricao,valor,tipo:cxTipo,data};
+  const{error}=await sb.from('caixinha_movimentos').insert(mov);
+  if(error){toast('Erro ao salvar',true);loading(false);return;}
+  movimentos.push(mov);
+  const novoSaldo=cxTipo==='deposito'?caixinhaAtual.saldo+valor:caixinhaAtual.saldo-valor;
+  await sb.from('caixinhas').update({saldo:novoSaldo}).eq('id',caixinhaAtual.id);
+  caixinhaAtual.saldo=novoSaldo;
+  const cx=caixinhas.find(c=>c.id===caixinhaAtual.id);
+  if(cx)cx.saldo=novoSaldo;
+  document.getElementById('cx-mov-desc').value='';document.getElementById('cx-mov-valor').value='';
+  loading(false);toast(cxTipo==='deposito'?'Depósito registrado!':'Retirada registrada!');
+  renderDetalhe(caixinhaAtual);
+}
+
+async function deletarCaixinha(){
+  if(!caixinhaAtual)return;
+  if(!confirm(`Excluir a caixinha "${caixinhaAtual.nome}"? Todos os movimentos serão removidos.`))return;
+  loading(true);
+  await sb.from('caixinhas').delete().eq('id',caixinhaAtual.id);
+  caixinhas=caixinhas.filter(c=>c.id!==caixinhaAtual.id);
+  movimentos=movimentos.filter(m=>m.caixinha_id!==caixinhaAtual.id);
+  caixinhaAtual=null;loading(false);toast('Caixinha excluída');voltarCaixinhas();
+}
+
+function voltarCaixinhas(){
+  document.getElementById('caixinhas-lista').style.display='';
+  document.getElementById('caixinha-detalhe').classList.remove('active');
+  caixinhaAtual=null;renderCaixinhas();
+}
+
+async function abrirCaixinha(id){
+  const cx=caixinhas.find(c=>c.id===id);if(!cx)return;
+  caixinhaAtual=cx;
+  loading(true);
+  const{data}=await sb.from('caixinha_movimentos').select('*').eq('caixinha_id',id).order('data',{ascending:false});
+  movimentos=data||[];loading(false);
+  document.getElementById('caixinhas-lista').style.display='none';
+  document.getElementById('caixinha-detalhe').classList.add('active');
+  document.getElementById('cx-mov-data').value=new Date().toISOString().split('T')[0];
+  renderDetalhe(cx);
+}
+
+function renderDetalhe(cx){
+  document.getElementById('cx-det-emoji').textContent=cx.emoji;
+  document.getElementById('cx-det-emoji').style.background=cx.cor+'22';
+  document.getElementById('cx-det-nome').textContent=cx.nome;
+  document.getElementById('cx-det-saldo').textContent=fmt(cx.saldo);
+  document.getElementById('cx-det-saldo').style.color=cx.cor;
+  document.getElementById('cx-det-meta').textContent=cx.meta>0?`Meta: ${fmt(cx.meta)} (${Math.min(100,Math.round((cx.saldo/cx.meta)*100))}%)`:'Sem meta definida';
+  const progEl=document.getElementById('cx-det-progress');
+  if(cx.meta>0){
+    const pct=Math.min(100,Math.round((cx.saldo/cx.meta)*100));
+    progEl.innerHTML=`<div style="height:8px;background:var(--bg4);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${cx.cor};border-radius:99px;transition:width 0.4s"></div></div>`;
+  }else{progEl.innerHTML='';}
+  const el=document.getElementById('cx-movimentos-list');
+  if(!movimentos.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div>Nenhuma movimentação ainda</div>';return;}
+  el.innerHTML=movimentos.map(m=>`
+    <div class="mov-item">
+      <div class="mov-icon" style="background:${m.tipo==='deposito'?'rgba(74,124,89,0.12)':'rgba(184,84,80,0.12)'}">${m.tipo==='deposito'?'⬆️':'⬇️'}</div>
+      <div class="mov-info"><div class="mov-desc">${m.descricao}</div><div class="mov-data">${new Date(m.data+'T12:00:00').toLocaleDateString('pt-BR')} · ${m.tipo==='deposito'?'Depósito':'Retirada'}</div></div>
+      <div class="mov-valor" style="color:${m.tipo==='deposito'?'var(--green)':'var(--red)'}">${m.tipo==='deposito'?'+':'-'} ${fmt(m.valor)}</div>
+    </div>
+  `).join('');
+}
+
+function renderCaixinhas(){
+  const el=document.getElementById('caixinhas-grid');
+  if(!caixinhas.length){el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏦</div>Crie sua primeira caixinha de reserva!</div>';return;}
+  el.innerHTML=caixinhas.map(cx=>{
+    const pct=cx.meta>0?Math.min(100,Math.round((cx.saldo/cx.meta)*100)):null;
+    return`<div class="caixinha-card" onclick="abrirCaixinha(${cx.id})">
+      <div class="caixinha-header">
+        <div>
+          <div class="caixinha-nome">${cx.nome}</div>
+          <div class="caixinha-saldo" style="color:${cx.cor}">${fmt(cx.saldo)}</div>
+          ${cx.meta>0?`<div class="caixinha-meta-label">Meta: ${fmt(cx.meta)}</div>`:'<div class="caixinha-meta-label">Clique para movimentar</div>'}
+        </div>
+        <div class="caixinha-emoji" style="background:${cx.cor}22">${cx.emoji}</div>
+      </div>
+      ${pct!==null?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${cx.cor}"></div></div><div style="font-size:12px;color:var(--text3);text-align:right">${pct}%</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ── Contas a Pagar ────────────────────────────────────────────────────────
@@ -561,8 +775,30 @@ async function marcarPago(id){
   loading(true);
   const{error}=await sb.from('contas').update({status:novoStatus}).eq('id',id);
   if(error){toast('Erro ao atualizar',true);loading(false);return;}
-  conta.status=novoStatus;loading(false);
-  toast(novoStatus==='pago'?'Marcada como paga!':'Marcada como pendente');renderContas();renderDashboard();
+  conta.status=novoStatus;
+
+  if(novoStatus==='pago'){
+    // Cria lançamento automático na despesa
+    const newTx={id:Date.now(),descricao:conta.nome,valor:conta.valor,data_tx:conta.vencimento,cat:conta.categoria,type:'despesa'};
+    const{error:txError}=await sb.from('transactions').insert(newTx);
+    if(!txError){
+      transactions.unshift(newTx);
+      toast('✅ Pago! Lançado automaticamente nas despesas.');
+    } else {
+      toast('Marcada como paga!');
+    }
+  } else {
+    // Remove o lançamento automático criado anteriormente
+    const idx=transactions.findIndex(t=>t.descricao===conta.nome&&t.valor===conta.valor&&t.data_tx===conta.vencimento&&t.type==='despesa');
+    if(idx>-1){
+      await sb.from('transactions').delete().eq('id',transactions[idx].id);
+      transactions.splice(idx,1);
+    }
+    toast('Marcada como pendente');
+  }
+
+  loading(false);
+  renderContas();renderDashboard();
 }
 async function delConta(id){
   if(!confirm('Remover esta conta?'))return;loading(true);
@@ -648,8 +884,30 @@ async function marcarRecebido(id){
   loading(true);
   const{error}=await sb.from('recebimentos').update({status:novoStatus}).eq('id',id);
   if(error){toast('Erro ao atualizar',true);loading(false);return;}
-  r.status=novoStatus;loading(false);
-  toast(novoStatus==='recebido'?'Marcado como recebido!':'Marcado como pendente');renderRecebimentos();renderDashboard();
+  r.status=novoStatus;
+
+  if(novoStatus==='recebido'){
+    // Cria lançamento automático na receita
+    const newTx={id:Date.now(),descricao:r.nome,valor:r.valor,data_tx:r.data_prevista,cat:r.categoria,type:'receita'};
+    const{error:txError}=await sb.from('transactions').insert(newTx);
+    if(!txError){
+      transactions.unshift(newTx);
+      toast('✅ Recebido! Lançado automaticamente nas receitas.');
+    } else {
+      toast('Marcado como recebido!');
+    }
+  } else {
+    // Remove o lançamento automático criado anteriormente
+    const idx=transactions.findIndex(t=>t.descricao===r.nome&&t.valor===r.valor&&t.data_tx===r.data_prevista&&t.type==='receita');
+    if(idx>-1){
+      await sb.from('transactions').delete().eq('id',transactions[idx].id);
+      transactions.splice(idx,1);
+    }
+    toast('Marcado como pendente');
+  }
+
+  loading(false);
+  renderRecebimentos();renderDashboard();
 }
 async function delRecebimento(id){
   if(!confirm('Remover este recebimento?'))return;loading(true);
@@ -742,12 +1000,17 @@ function renderDashboard(){
   const recebPendentes=recebimentos.filter(r=>r.status==='pendente'&&r.data_prevista.startsWith(m));
   const totalReceber=recebPendentes.reduce((s,r)=>s+r.valor,0);
 
+  const invest=txs.filter(t=>t.type==='investimento').reduce((s,t)=>s+t.valor,0);
+  const totalCaixinhas=caixinhas.reduce((s,c)=>s+c.saldo,0);
+
   document.getElementById('summary-cards').innerHTML=`
     <div class="card"><div class="card-label">Saldo do mês</div><div class="card-value ${saldo>=0?'green':'red'}">${fmtV(saldo)}</div><div class="card-sub">${saldo>=0?'✓ No positivo':'⚠ No negativo'}</div></div>
     <div class="card"><div class="card-label">Receitas</div><div class="card-value green">${fmtV(rec)}</div><div class="card-sub">${txs.filter(t=>t.type==='receita').length} lançamentos</div></div>
     <div class="card"><div class="card-label">Despesas</div><div class="card-value red">${fmtV(desp)}</div><div class="card-sub">${txs.filter(t=>t.type==='despesa').length} lançamentos</div></div>
+    <div class="card"><div class="card-label">Investimentos</div><div class="card-value blue">${fmtV(invest)}</div><div class="card-sub">${txs.filter(t=>t.type==='investimento').length} lançamentos</div></div>
     <div class="card"><div class="card-label">A pagar</div><div class="card-value yellow">${fmtV(totalPagar)}</div><div class="card-sub">${contasPendentes.length} pendente(s)</div></div>
     <div class="card"><div class="card-label">A receber</div><div class="card-value purple">${fmtV(totalReceber)}</div><div class="card-sub">${recebPendentes.length} pendente(s)</div></div>
+    <div class="card"><div class="card-label">Total caixinhas</div><div class="card-value" style="color:var(--brown)">${fmtV(totalCaixinhas)}</div><div class="card-sub">${caixinhas.length} caixinha(s)</div></div>
   `;
 
   const urgentes=contas.filter(c=>c.status==='pendente'&&diasAteVencer(c.vencimento)<=7);
